@@ -30,7 +30,7 @@ Before using SpamHook, make sure you have the following:
 3. Create a .env file in the project directory with the following information:
 
    ```env
-   WEBHOOK_URL=<your_discord_webhook_url>
+   WEBHOOK_URL=<your_discord_webhook_urls_separated_by_semicolon>
    WEBHOOK_NAME=<your_webhook_name>
    MESSAGE=<your_spam_message>
    ```
@@ -42,7 +42,7 @@ Before using SpamHook, make sure you have the following:
    python spamhook.py
    ```
 2. Follow the on-screen instructions to set the number of messages to be sent and other configurations.
-3. The script will start spamming the specified message to the Discord server using the webhook.
+3. The script will start spamming the specified message to the Discord server using the configured webhooks.
 
 ## Disclaimer
 
