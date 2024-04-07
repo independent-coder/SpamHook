@@ -1,5 +1,6 @@
 import os
 import time
+import discord_webhook
 from dotenv import load_dotenv
 import colorama
 import threading
@@ -13,13 +14,20 @@ done = 1
 
 # Access webhook URLs
 webhook_urls = os.getenv('WEBHOOK_URL')
+if not webhook_urls:
+    raise ValueError("Missing 'WEBHOOK_URL' parameter in the .env file.")
+
 webhooks = [url.strip() for url in webhook_urls.split(';')]
 
 # Access single message
 message = os.getenv('MESSAGE')
+if not message:
+    raise ValueError("Missing 'MESSAGE' parameter in the .env file.")
 
 # Access single webhook name
 webhook_name = os.getenv('WEBHOOK_NAME')
+if not webhook_name:
+    raise ValueError("Missing 'WEBHOOK_NAME' parameter in the .env file.")
 
 print(f'{colorama.Fore.BLUE}MADE BY {colorama.Fore.RED}P1NGU!\n')
 
@@ -29,7 +37,7 @@ if len(webhooks) > 1:
     for index, webhook_url in enumerate(webhooks, start=1):
         print(f"#{index} webhook: {webhook_url}\n")
 else:
-    print("Current set webhook(s):")
+    print("Current set webhook:")
     for index, webhook_url in enumerate(webhooks, start=1):
         print(f"Webhook: {webhook_url}\n")
 
@@ -39,17 +47,25 @@ print(f"Current set message:\n{message}\n")
 # Print single webhook name
 print(f"Webhook Name: {webhook_name}\n")
 
-# Function to send message
 def send_message(webhook_url, webhook_index):
     global done
     webhook = DiscordWebhook(url=webhook_url, username=webhook_name)
-    for _ in range(10):
-        webhook.content = message
-        webhook.execute()
-        os.system(f'title SpamHook - Spamming! (#{done}) - Made by P1NGU!')
-        print(
-            f'{colorama.Fore.GREEN}Success! {colorama.Fore.YELLOW}Message sent "{message}"! (#{done}) by webhook #{webhook_index}{colorama.Style.RESET_ALL}')
-        done += 1
+    for _ in range(times_per_webhook):
+        try:
+            webhook.content = message
+            webhook.execute()
+            os.system(f'title SpamHook - Spamming! (#{done}) - Made by P1NGU!')
+            print(f'{colorama.Fore.GREEN}Success! {colorama.Fore.YELLOW}Message sent "{message}"! (#{done}) by webhook #{webhook_index}{colorama.Style.RESET_ALL}')
+            done += 1
+        except discord_webhook.WebhookException as e:
+            if "429" in str(e):
+                retry_after = 3  # Example retry_after duration
+                print(f'{colorama.Fore.RED}Error! {colorama.Fore.YELLOW}We are being rate limited. Retrying in {retry_after} seconds...{colorama.Style.RESET_ALL}')
+                time.sleep(retry_after)  # Wait for retry_after seconds before retrying
+            else:
+                print(f'{colorama.Fore.RED}Error! {colorama.Fore.YELLOW}{str(e)}{colorama.Style.RESET_ALL}')
+            continue
+
 
 
 # Get number of times to send message per webhook
@@ -66,6 +82,7 @@ os.system('title SpamHook - Ready')
 print(f'{colorama.Fore.GREEN}Ready! {colorama.Fore.YELLOW}Each webhook will spam {times_per_webhook} times with message "{message}"! Starting in 5 seconds. CTRL+C to stop.{colorama.Style.RESET_ALL}\n')
 time.sleep(5)
 
+
 # Send messages to all webhooks simultaneously using threading
 threads = []
 for index, webhook_url in enumerate(webhooks, start=1):
@@ -74,9 +91,13 @@ for index, webhook_url in enumerate(webhooks, start=1):
     thread.start()
 
 
-# Wait for all threads to finish
+    # Start threads
 for thread in threads:
-    thread.join()
+        thread.start()
+
+    # Wait for all threads to finish
+for thread in threads:
+        thread.join()
 
 total_messages_sent = len(webhooks) * times_per_webhook
 print(f'{colorama.Fore.GREEN}Report: {colorama.Fore.YELLOW}Each webhook spammed {times_per_webhook} times! Total messages sent: {total_messages_sent}{colorama.Style.RESET_ALL}\n')
